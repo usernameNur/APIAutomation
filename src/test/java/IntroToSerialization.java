@@ -1,3 +1,4 @@
+import com.github.javafaker.Faker;
 import com.google.gson.Gson;
 import com.google.gson.internal.bind.util.ISO8601Utils;
 import io.restassured.RestAssured;
@@ -5,6 +6,7 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import pojo.Seller;
 import pojo.Tag;
 
 import java.util.Arrays;
@@ -43,6 +45,35 @@ public class IntroToSerialization {
 
         System.out.println(tagResponse.getMessage());
         System.out.println(Arrays.toString(tagResponse.getDetails()));
+
+
+        Faker faker=new Faker();
+        Seller seller=new Seller();
+
+        seller.setCompany_name(faker.company().name());
+        seller.setSeller_name(faker.name().fullName());
+        seller.setEmail(faker.internet().emailAddress());
+        seller.setPhone_number(faker.phoneNumber().cellPhone());
+        seller.setAddress(faker.address().streetAddress());
+
+        gson=new Gson();
+        String requestInJson=gson.toJson(seller, Seller.class);
+
+        response=RestAssured.given()
+                .contentType(ContentType.JSON)
+                .auth()
+                .oauth2(token)
+                .baseUri("https://backend.cashwise.us/api/myaccount")
+                .body(requestInJson)
+                .when()
+                .post("/sellers");
+
+        responseInJson=response.asString();
+        gson =new Gson();
+        Seller responseSeller=gson.fromJson(responseInJson, Seller.class);
+        Assert.assertEquals(response.statusCode(), 201);
+        Assert.assertTrue(responseSeller.getSeller_id() !=0);
+        Assert.assertEquals(responseSeller.getCompany_name(), seller.getCompany_name());
 
 
 
